@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Channels</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #343a40;
+            color: #fff;
+        }
+        .container {
+            padding-top: 20px;
+        }
+        .video-container {
+            text-align: center; /* Center iframe container */
+        }
+        .video {
+            width: 736.94px;
+            height: 500px; /* Increased height */
+            margin: 0 auto; /* Center iframe horizontally */
+        }
+        .channel-title {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-align: center; /* Center titles */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Sports Channels</h1>
+        <div id="channels"></div> <!-- Placeholder for dynamic content -->
+    </div>
+
+    <script>
+        // Define channel numbers and names
+        const channels = [
+            { number: 140, name: "Sport 1" },
+            { number: 141, name: "Sport 2" },
+            { number: 142, name: "Sport 3" },
+            { number: 143, name: "Sport 4" },
+            { number: 144, name: "Sport 5" },
+            // Skipping 146 and 147
+            { number: 148, name: "Sport 5 Plus" },
+            { number: 145, name: "Sport 5 Gold" },
+        ];
+
+        channels.forEach(channel => {
+            const src = `https://dlhd.sx/embed/stream-${channel.number}.php`;
+            const channelContainer = document.getElementById('channels');
+
+            // Create title
+            const title = document.createElement('h2');
+            title.className = 'channel-title';
+            title.textContent = `${channel.name}`;
+            channelContainer.appendChild(title);
+
+            // Create iframe container
+            const iframeContainer = document.createElement('div');
+            iframeContainer.className = 'video-container';
+
+            // Create iframe
+            const iframe = document.createElement('iframe');
+            iframe.className = 'video responsive';
+            iframe.setAttribute('loading', 'lazy');
+            iframe.setAttribute('marginheight', '0');
+            iframe.setAttribute('marginwidth', '0');
+            iframe.style.width = '736.94px';
+            iframe.style.height = '500px';
+            iframe.setAttribute('src', src);
+            iframe.setAttribute('name', 'iframe_a');
+            iframe.setAttribute('scrolling', 'no');
+            iframe.setAttribute('allowfullscreen', 'yes');
+            iframe.setAttribute('frameborder', '0');
+
+            // Append iframe to its container, then to the channel container
+            iframeContainer.appendChild(iframe);
+            channelContainer.appendChild(iframeContainer);
+        });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>
