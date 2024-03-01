@@ -10,8 +10,8 @@ channels = [
     {'name': 'Sport 3', 'url': 'https://dlhd.sx/embed/stream-142.php'},
     {'name': 'Sport 4', 'url': 'https://dlhd.sx/embed/stream-143.php'},
     {'name': 'Sport 5', 'url': 'https://dlhd.sx/embed/stream-144.php'},
-    {'name': 'Sport 5 Plus', 'url': 'https://dlhd.sx/embed/stream-148.php'},
-    {'name': 'Sport 5 Gold', 'url': 'https://dlhd.sx/embed/stream-145.php'},
+    {'name': 'Sport 5 Plus', 'url': 'https://dlhd.sx/embed/stream-145.php'},
+    {'name': 'Sport 5 Gold', 'url': 'https://dlhd.sx/embed/stream-148.php'},
     # Add more channels as needed
 ]
 
