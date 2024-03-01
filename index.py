@@ -82,7 +82,7 @@ def login():
     if request.method == 'POST':
         password = request.form.get('password')
         # Replace 'your_password' with your actual password
-        if password == 'your_password':
+        if password == 'hapoel':
             session['authenticated'] = True
             return redirect(url_for('protected'))
         else:
