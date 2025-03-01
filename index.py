@@ -141,6 +141,24 @@ protected_page_html = '''
             border-radius: 5px;
             background-color: #dc3545;
         }
+        .ad-blocker-notice {
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .iframe-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            z-index: 10;
+            pointer-events: none;
+        }
         @media (max-width: 576px) {
             .channel-title {
                 font-size: 1.2rem;
@@ -151,11 +169,18 @@ protected_page_html = '''
             }
         }
     </style>
+    <!-- Meta tags to discourage ads -->
+    <meta name="robots" content="nofollow">
+    <meta http-equiv="Content-Security-Policy" content="frame-src 'self' dlhd.sx; default-src 'self' 'unsafe-inline' stackpath.bootstrapcdn.com cdnjs.cloudflare.com code.jquery.com cdn.jsdelivr.net dlhd.sx;">
 </head>
 <body>
     <div class="header">
         <h1 class="m-0">Sports Channels</h1>
         <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    
+    <div class="ad-blocker-notice">
+        <i class="fas fa-shield-alt"></i> Ad blocking enabled
     </div>
     
     <div class="channel-nav" id="channelNav">
@@ -169,7 +194,8 @@ protected_page_html = '''
         <div id="channel-{{ loop.index }}" class="channel-section">
             <h2 class="channel-title">{{ channel.name }}</h2>
             <div class="video-container">
-                <iframe loading="lazy" src="{{ channel.url }}" name="iframe_{{ loop.index }}" allowfullscreen="yes"></iframe>
+                <iframe loading="lazy" src="{{ channel.url }}" name="iframe_{{ loop.index }}" allowfullscreen="yes" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+                <div class="iframe-overlay"></div>
             </div>
         </div>
         {% endfor %}
@@ -196,6 +222,47 @@ protected_page_html = '''
                 firstChannel.scrollIntoView();
             }
         });
+        
+        // Block popup ads
+        (function() {
+            // Override window.open to prevent popups
+            const originalWindowOpen = window.open;
+            window.open = function() {
+                console.log('Popup blocked');
+                return null;
+            };
+            
+            // Block new tabs/windows
+            document.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A' && e.target.target === '_blank') {
+                    e.preventDefault();
+                    console.log('New tab/window blocked');
+                }
+            }, true);
+            
+            // Block iframe redirects
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                try {
+                    iframe.onload = function() {
+                        try {
+                            // Try to access iframe content (may fail due to same-origin policy)
+                            const iframeWindow = iframe.contentWindow;
+                            const originalIframeOpen = iframeWindow.open;
+                            iframeWindow.open = function() {
+                                console.log('Iframe popup blocked');
+                                return null;
+                            };
+                        } catch (e) {
+                            // Cannot access iframe content due to same-origin policy
+                            console.log('Cannot access iframe content');
+                        }
+                    };
+                } catch (e) {
+                    console.log('Error setting up iframe protection', e);
+                }
+            });
+        })();
     </script>
 </body>
 </html>
