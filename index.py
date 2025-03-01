@@ -20,15 +20,48 @@ login_page_html = '''
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #343a40;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .form-control {
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            width: 100%;
+            background-color: #007bff;
+            border: none;
+        }
+    </style>
 </head>
 <body>
-    <h2>Login Page</h2>
-    <form method="POST">
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password">
-        <input type="submit" value="Login">
-    </form>
+    <div class="login-container">
+        <h2 class="text-center mb-4">Login</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+    </div>
 </body>
 </html>
 '''
@@ -38,41 +71,132 @@ protected_page_html = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Protected Content</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Channels</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
             background-color: #343a40;
             color: #fff;
+            padding-bottom: 20px;
         }
         .container {
             padding-top: 20px;
         }
         .video-container {
-            text-align: center;
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            margin-bottom: 30px;
         }
-        .video {
-            width: 736.94px;
-            height: 500px;
-            margin: 0 auto;
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
         }
         .channel-title {
             margin-top: 20px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             text-align: center;
+            font-size: 1.5rem;
+        }
+        .channel-nav {
+            background-color: #212529;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .channel-nav a {
+            display: inline-block;
+            color: #fff;
+            text-align: center;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 20px;
+            margin: 0 5px;
+            transition: background-color 0.3s;
+        }
+        .channel-nav a:hover, .channel-nav a.active {
+            background-color: #007bff;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #212529;
+        }
+        .logout-btn {
+            color: #fff;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #dc3545;
+        }
+        @media (max-width: 576px) {
+            .channel-title {
+                font-size: 1.2rem;
+            }
+            .container {
+                padding-left: 5px;
+                padding-right: 5px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center mb-4">Sports Channels</h1>
+    <div class="header">
+        <h1 class="m-0">Sports Channels</h1>
+        <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    
+    <div class="channel-nav" id="channelNav">
         {% for channel in channels %}
-        <h2 class="channel-title">{{ channel.name }}</h2>
-        <div class="video-container">
-            <iframe class="video responsive" loading="lazy" marginheight="0" marginwidth="0" width="736.94" height="500" src="{{ channel.url }}" name="iframe_a" scrolling="no" allowfullscreen="yes" frameborder="0"></iframe>
+        <a href="#channel-{{ loop.index }}" class="{% if loop.first %}active{% endif %}">{{ channel.name }}</a>
+        {% endfor %}
+    </div>
+    
+    <div class="container">
+        {% for channel in channels %}
+        <div id="channel-{{ loop.index }}" class="channel-section">
+            <h2 class="channel-title">{{ channel.name }}</h2>
+            <div class="video-container">
+                <iframe loading="lazy" src="{{ channel.url }}" name="iframe_{{ loop.index }}" allowfullscreen="yes"></iframe>
+            </div>
         </div>
         {% endfor %}
     </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Highlight active channel in navigation
+        const navLinks = document.querySelectorAll('.channel-nav a');
+        
+        // Add click event to navigation links
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Scroll to active channel on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstChannel = document.getElementById('channel-1');
+            if (firstChannel) {
+                firstChannel.scrollIntoView();
+            }
+        });
+    </script>
 </body>
 </html>
 '''
