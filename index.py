@@ -1,4 +1,5 @@
 from flask import Flask, request, redirect, url_for, session, render_template_string
+import os
 
 app = Flask(__name__)
 app.secret_key = 'replace_with_a_secure_secret_key'
@@ -81,9 +82,14 @@ protected_page_html = '''
             background-color: #343a40;
             color: #fff;
             padding-bottom: 20px;
+            font-family: Arial, sans-serif;
+            padding-top: 110px; /* Space for fixed header and nav */
         }
         .container {
             padding-top: 20px;
+            max-width: 100%;
+            padding-left: 10px;
+            padding-right: 10px;
         }
         .video-container {
             position: relative;
@@ -91,6 +97,11 @@ protected_page_html = '''
             height: 0;
             overflow: hidden;
             margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            max-width: 800px; /* Limit max width */
+            margin-left: auto;
+            margin-right: auto;
         }
         .video-container iframe {
             position: absolute;
@@ -105,14 +116,35 @@ protected_page_html = '''
             margin-bottom: 15px;
             text-align: center;
             font-size: 1.5rem;
+            color: #fff;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        .nav-wrapper {
+            position: fixed;
+            top: 50px; /* Below the header */
+            left: 0;
+            right: 0;
+            z-index: 99;
         }
         .channel-nav {
             background-color: #212529;
             overflow-x: auto;
             white-space: nowrap;
             padding: 10px 0;
-            margin-bottom: 20px;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #007bff #212529;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .channel-nav::-webkit-scrollbar {
+            height: 6px;
+        }
+        .channel-nav::-webkit-scrollbar-thumb {
+            background-color: #007bff;
+            border-radius: 3px;
+        }
+        .channel-nav::-webkit-scrollbar-track {
+            background-color: #212529;
         }
         .channel-nav a {
             display: inline-block;
@@ -122,10 +154,13 @@ protected_page_html = '''
             text-decoration: none;
             border-radius: 20px;
             margin: 0 5px;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
+            font-size: 0.9rem;
         }
         .channel-nav a:hover, .channel-nav a.active {
             background-color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,123,255,0.5);
         }
         .header {
             display: flex;
@@ -133,6 +168,16 @@ protected_page_html = '''
             align-items: center;
             padding: 10px 15px;
             background-color: #212529;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
         }
         .logout-btn {
             color: #fff;
@@ -140,53 +185,51 @@ protected_page_html = '''
             padding: 5px 10px;
             border-radius: 5px;
             background-color: #dc3545;
-        }
-        .ad-blocker-notice {
-            background-color: #28a745;
-            color: white;
-            text-align: center;
-            padding: 5px;
+            transition: all 0.3s;
             font-size: 0.9rem;
-            margin-bottom: 10px;
         }
-        .iframe-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            z-index: 10;
-            pointer-events: none;
+        .logout-btn:hover {
+            background-color: #c82333;
+            color: #fff;
+            text-decoration: none;
+            transform: translateY(-2px);
         }
         @media (max-width: 576px) {
             .channel-title {
                 font-size: 1.2rem;
             }
-            .container {
-                padding-left: 5px;
-                padding-right: 5px;
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            .logout-btn {
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+            .channel-nav a {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+            body {
+                padding-top: 100px;
             }
         }
+        .channel-section {
+            scroll-margin-top: 120px; /* Ensures proper scrolling with sticky header */
+        }
     </style>
-    <!-- Meta tags to discourage ads -->
-    <meta name="robots" content="nofollow">
-    <meta http-equiv="Content-Security-Policy" content="frame-src 'self' dlhd.sx; default-src 'self' 'unsafe-inline' stackpath.bootstrapcdn.com cdnjs.cloudflare.com code.jquery.com cdn.jsdelivr.net dlhd.sx;">
 </head>
 <body>
     <div class="header">
-        <h1 class="m-0">Sports Channels</h1>
+        <h1>Sports Channels</h1>
         <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
     
-    <div class="ad-blocker-notice">
-        <i class="fas fa-shield-alt"></i> Ad blocking enabled
-    </div>
-    
-    <div class="channel-nav" id="channelNav">
-        {% for channel in channels %}
-        <a href="#channel-{{ loop.index }}" class="{% if loop.first %}active{% endif %}">{{ channel.name }}</a>
-        {% endfor %}
+    <div class="nav-wrapper">
+        <div class="channel-nav" id="channelNav">
+            {% for channel in channels %}
+            <a href="#channel-{{ loop.index }}" class="{% if loop.first %}active{% endif %}">{{ channel.name }}</a>
+            {% endfor %}
+        </div>
     </div>
     
     <div class="container">
@@ -194,8 +237,7 @@ protected_page_html = '''
         <div id="channel-{{ loop.index }}" class="channel-section">
             <h2 class="channel-title">{{ channel.name }}</h2>
             <div class="video-container">
-                <iframe loading="lazy" src="{{ channel.url }}" name="iframe_{{ loop.index }}" allowfullscreen="yes" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-                <div class="iframe-overlay"></div>
+                <iframe loading="lazy" src="{{ channel.url }}" name="iframe_{{ loop.index }}" allowfullscreen="yes" allow="autoplay; fullscreen"></iframe>
             </div>
         </div>
         {% endfor %}
@@ -209,9 +251,17 @@ protected_page_html = '''
         
         // Add click event to navigation links
         navLinks.forEach(link => {
-            link.addEventListener('click', function() {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
                 navLinks.forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
+                
+                // Smooth scroll to the target
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
             });
         });
         
@@ -219,50 +269,11 @@ protected_page_html = '''
         document.addEventListener('DOMContentLoaded', function() {
             const firstChannel = document.getElementById('channel-1');
             if (firstChannel) {
-                firstChannel.scrollIntoView();
+                setTimeout(() => {
+                    firstChannel.scrollIntoView({ behavior: 'smooth' });
+                }, 300);
             }
         });
-        
-        // Block popup ads
-        (function() {
-            // Override window.open to prevent popups
-            const originalWindowOpen = window.open;
-            window.open = function() {
-                console.log('Popup blocked');
-                return null;
-            };
-            
-            // Block new tabs/windows
-            document.addEventListener('click', function(e) {
-                if (e.target.tagName === 'A' && e.target.target === '_blank') {
-                    e.preventDefault();
-                    console.log('New tab/window blocked');
-                }
-            }, true);
-            
-            // Block iframe redirects
-            const iframes = document.querySelectorAll('iframe');
-            iframes.forEach(iframe => {
-                try {
-                    iframe.onload = function() {
-                        try {
-                            // Try to access iframe content (may fail due to same-origin policy)
-                            const iframeWindow = iframe.contentWindow;
-                            const originalIframeOpen = iframeWindow.open;
-                            iframeWindow.open = function() {
-                                console.log('Iframe popup blocked');
-                                return null;
-                            };
-                        } catch (e) {
-                            // Cannot access iframe content due to same-origin policy
-                            console.log('Cannot access iframe content');
-                        }
-                    };
-                } catch (e) {
-                    console.log('Error setting up iframe protection', e);
-                }
-            });
-        })();
     </script>
 </body>
 </html>
@@ -292,5 +303,8 @@ def protected():
     # Pass the channels list to the template
     return render_template_string(protected_page_html, channels=channels)
 
+# For Render deployment
+port = int(os.environ.get("PORT", 5000))
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=port)
