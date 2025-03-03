@@ -100,8 +100,15 @@ protected_page_html = '''
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             max-width: 800px; /* Limit max width */
+            max-height: 450px; /* Limit max height */
             margin-left: auto;
             margin-right: auto;
+        }
+        @media (min-width: 1200px) {
+            .video-container {
+                padding-bottom: 0;
+                height: 450px;
+            }
         }
         .video-container iframe {
             position: absolute;
@@ -194,6 +201,18 @@ protected_page_html = '''
             text-decoration: none;
             transform: translateY(-2px);
         }
+        .popup-blocker-notice {
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            font-size: 0.9rem;
+            position: fixed;
+            top: 50px;
+            left: 0;
+            right: 0;
+            z-index: 98;
+        }
         @media (max-width: 576px) {
             .channel-title {
                 font-size: 1.2rem;
@@ -222,6 +241,10 @@ protected_page_html = '''
     <div class="header">
         <h1>Sports Channels</h1>
         <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    
+    <div class="popup-blocker-notice">
+        <i class="fas fa-shield-alt"></i> Popup blocking enabled
     </div>
     
     <div class="nav-wrapper">
@@ -274,6 +297,38 @@ protected_page_html = '''
                 }, 300);
             }
         });
+        
+        // Block popups
+        (function() {
+            // Override window.open to prevent popups
+            const originalOpen = window.open;
+            window.open = function() {
+                console.log('Popup blocked');
+                return null;
+            };
+            
+            // Block target="_blank" links
+            document.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A' && e.target.getAttribute('target') === '_blank') {
+                    e.preventDefault();
+                    console.log('New tab blocked');
+                }
+            }, true);
+            
+            // Try to block popups from iframes
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                iframe.onload = function() {
+                    try {
+                        iframe.contentWindow.open = function() {
+                            return null;
+                        };
+                    } catch (e) {
+                        // Cannot access iframe content due to same-origin policy
+                    }
+                };
+            });
+        })();
     </script>
 </body>
 </html>
